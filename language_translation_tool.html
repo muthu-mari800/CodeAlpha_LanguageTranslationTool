@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinguaShift — Language Translation Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #fffdf7;
+    --surface2: #f0ebe0;
+    --border: #ddd8cc;
+    --ink: #1a1610;
+    --ink2: #5a5448;
+    --ink3: #9a9080;
+    --accent: #c84b2f;
+    --accent2: #2f6bc8;
+    --accent3: #2a8a5c;
+    --shadow: 0 2px 12px rgba(26,22,16,0.08);
+    --shadow-lg: 0 8px 40px rgba(26,22,16,0.12);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Instrument Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* noise texture overlay */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:0; opacity:0.4;
+  }
+
+  /* HEADER */
+  header {
+    position: relative; z-index:10;
+    padding: 24px 40px;
+    display: flex; justify-content:space-between; align-items:center;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .brand {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem; font-weight: 900;
+    letter-spacing: -0.03em; color: var(--ink);
+  }
+  .brand span { color: var(--accent); }
+  .brand-sub {
+    font-size: 0.65rem; color: var(--ink3);
+    text-transform: uppercase; letter-spacing: 0.12em;
+    margin-top: 2px;
+  }
+  .badge-codealpha {
+    background: var(--ink); color: var(--bg);
+    font-size: 0.65rem; padding: 4px 10px; border-radius: 20px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  /* MAIN */
+  main {
+    flex: 1; position:relative; z-index:1;
+    padding: 48px 40px;
+    max-width: 1100px; margin: 0 auto; width: 100%;
+  }
+
+  .hero {
+    text-align: center; margin-bottom: 40px;
+    animation: fadeDown 0.5s ease;
+  }
+  @keyframes fadeDown {
+    from { opacity:0; transform:translateY(-16px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 3rem; font-weight: 900;
+    letter-spacing: -0.04em; line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero p { color: var(--ink2); font-size: 0.9rem; }
+
+  /* TRANSLATOR CARD */
+  .translator-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(20px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  /* LANGUAGE BAR */
+  .lang-bar {
+    display: flex; align-items: center;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px; gap: 12px;
+  }
+  .lang-select-wrap {
+    flex: 1; position: relative;
+  }
+  .lang-select-wrap label {
+    display: block; font-size: 0.6rem;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--ink3); margin-bottom: 4px;
+  }
+  .lang-select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 0.85rem; color: var(--ink);
+    outline: none; cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239a9080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+  .lang-select:focus { border-color: var(--accent2); }
+
+  .swap-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50%; width: 40px; height: 40px;
+    display: flex; align-items:center; justify-content:center;
+    cursor: pointer; font-size: 1rem;
+    transition: all 0.2s; flex-shrink:0;
+    margin-top: 16px;
+    color: var(--ink2);
+  }
+  .swap-btn:hover {
+    background: var(--accent2); color:#fff;
+    border-color: var(--accent2);
+    transform: rotate(180deg);
+  }
+
+  /* TEXT AREAS */
+  .panels {
+    display: grid; grid-template-columns: 1fr 1fr;
+  }
+  .panel {
+    padding: 24px;
+    position: relative;
+  }
+  .panel:first-child {
+    border-right: 1px solid var(--border);
+  }
+  .panel-label {
+    font-size: 0.65rem; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--ink3);
+    margin-bottom: 10px; display:flex;
+    justify-content:space-between; align-items:center;
+  }
+  .char-count { font-size: 0.65rem; color: var(--ink3); }
+  textarea {
+    width: 100%; min-height: 200px;
+    background: none; border: none; outline: none;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 1rem; color: var(--ink);
+    line-height: 1.6; resize: none;
+  }
+  textarea::placeholder { color: var(--ink3); }
+  #output-text {
+    min-height: 200px;
+    font-size: 1rem; line-height: 1.6;
+    color: var(--ink); word-break: break-word;
+    white-space: pre-wrap;
+  }
+  .output-placeholder { color: var(--ink3); font-style: italic; }
+
+  /* ACTION BAR */
+  .action-bar {
+    display: flex; justify-content:space-between; align-items:center;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+    flex-wrap: wrap; gap: 10px;
+  }
+  .action-left, .action-right { display:flex; gap:8px; align-items:center; }
+
+  .btn {
+    display: flex; align-items:center; gap:6px;
+    padding: 9px 18px; border-radius: 8px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 0.8rem; font-weight: 600;
+    border: none; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-translate {
+    background: var(--accent);
+    color: #fff; padding: 10px 28px;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(200,75,47,0.3);
+  }
+  .btn-translate:hover { background: #a83a20; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(200,75,47,0.4); }
+  .btn-translate:disabled { background: var(--ink3); box-shadow:none; cursor:not-allowed; transform:none; }
+  .btn-clear {
+    background: none; border: 1px solid var(--border);
+    color: var(--ink2);
+  }
+  .btn-clear:hover { background: var(--surface2); border-color: var(--ink3); }
+  .btn-copy {
+    background: var(--accent3); color: #fff;
+  }
+  .btn-copy:hover { background: #1f6e49; transform: translateY(-1px); }
+  .btn-copy:disabled { background: var(--ink3); cursor:not-allowed; transform:none; }
+
+  /* DETECTED LANG BADGE */
+  .detected-badge {
+    display: none;
+    background: rgba(47,107,200,0.1);
+    color: var(--accent2);
+    border: 1px solid rgba(47,107,200,0.2);
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 0.7rem; font-weight: 600;
+  }
+  .detected-badge.show { display:inline-flex; align-items:center; gap:4px; }
+
+  /* LOADING */
+  .spinner {
+    display: none; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  .spinner.show { display:block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--ink); color: var(--bg);
+    padding: 10px 22px; border-radius: 30px;
+    font-size: 0.78rem; font-weight: 500;
+    opacity: 0; transition: all 0.3s;
+    z-index: 999; white-space:nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* HISTORY */
+  .history-section {
+    margin-top: 32px;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+  .history-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem; font-weight: 700;
+    margin-bottom: 16px; color: var(--ink2);
+    display: flex; justify-content:space-between; align-items:center;
+  }
+  .btn-clear-history {
+    font-size: 0.7rem; background: none; border: 1px solid var(--border);
+    color: var(--ink3); padding: 4px 10px; border-radius: 6px;
+    cursor: pointer; font-family: 'Instrument Sans', sans-serif;
+  }
+  .btn-clear-history:hover { color: var(--accent); border-color: var(--accent); }
+  .history-list { display: flex; flex-direction: column; gap: 10px; }
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 18px;
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    gap: 12px; align-items:center;
+    transition: box-shadow 0.2s;
+  }
+  .history-item:hover { box-shadow: var(--shadow); }
+  .history-text { font-size: 0.82rem; color: var(--ink); }
+  .history-original { color: var(--ink2); }
+  .history-arrow { color: var(--ink3); font-size: 0.8rem; text-align:center; }
+  .history-langs {
+    font-size: 0.65rem; color: var(--ink3);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-top: 3px;
+  }
+  .empty-history { color: var(--ink3); font-size: 0.82rem; font-style: italic; padding: 12px 0; }
+
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 20px;
+    font-size: 0.7rem; color: var(--ink3);
+    border-top: 1px solid var(--border);
+    position: relative; z-index:1;
+  }
+
+  @media(max-width: 700px) {
+    main { padding: 24px 16px; }
+    header { padding: 16px 20px; }
+    .hero h1 { font-size: 2rem; }
+    .panels { grid-template-columns: 1fr; }
+    .panel:first-child { border-right:none; border-bottom: 1px solid var(--border); }
+    .lang-bar { flex-wrap:wrap; }
+    .swap-btn { margin-top:0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand">Lingua<span>Shift</span></div>
+    <div class="brand-sub">Language Translation Tool</div>
+  </div>
+  <span class="badge-codealpha">CodeAlpha · Task 1</span>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Translate <em>anything,</em><br>instantly.</h1>
+    <p>Powered by MyMemory API · 50+ languages supported</p>
+  </div>
+
+  <div class="translator-card">
+    <!-- LANGUAGE BAR -->
+    <div class="lang-bar">
+      <div class="lang-select-wrap">
+        <label>Source Language</label>
+        <select class="lang-select" id="source-lang"></select>
+      </div>
+      <button class="swap-btn" onclick="swapLanguages()" title="Swap languages">⇄</button>
+      <div class="lang-select-wrap">
+        <label>Target Language</label>
+        <select class="lang-select" id="target-lang"></select>
+      </div>
+    </div>
+
+    <!-- PANELS -->
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label">
+          <span>Source Text</span>
+          <span class="char-count" id="char-count">0 / 500</span>
+        </div>
+        <textarea id="input-text" placeholder="Type or paste text here to translate..." maxlength="500" oninput="updateCharCount()"></textarea>
+      </div>
+      <div class="panel">
+        <div class="panel-label">
+          <span>Translation</span>
+          <span class="detected-badge" id="detected-badge">⚡ Auto-detected</span>
+        </div>
+        <div id="output-text"><span class="output-placeholder">Translation will appear here…</span></div>
+      </div>
+    </div>
+
+    <!-- ACTION BAR -->
+    <div class="action-bar">
+      <div class="action-left">
+        <button class="btn btn-clear" onclick="clearAll()">✕ Clear</button>
+        <button class="btn btn-copy" id="copy-btn" onclick="copyTranslation()" disabled>⧉ Copy</button>
+      </div>
+      <div class="action-right">
+        <button class="btn btn-translate" id="translate-btn" onclick="translateText()">
+          <div class="spinner" id="spinner"></div>
+          <span id="translate-label">Translate →</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-section">
+    <div class="history-title">
+      Recent Translations
+      <button class="btn-clear-history" onclick="clearHistory()">Clear history</button>
+    </div>
+    <div class="history-list" id="history-list">
+      <div class="empty-history">No translations yet. Start translating above!</div>
+    </div>
+  </div>
+</main>
+
+<footer>Built with MyMemory API · CodeAlpha AI Internship Task 1</footer>
+<div id="toast"></div>
+
+<script>
+// ---- LANGUAGES ----
+const LANGUAGES = [
+  { code:'auto', name:'Auto Detect' },
+  { code:'en', name:'English' },
+  { code:'ta', name:'Tamil' },
+  { code:'hi', name:'Hindi' },
+  { code:'te', name:'Telugu' },
+  { code:'kn', name:'Kannada' },
+  { code:'ml', name:'Malayalam' },
+  { code:'mr', name:'Marathi' },
+  { code:'bn', name:'Bengali' },
+  { code:'gu', name:'Gujarati' },
+  { code:'pa', name:'Punjabi' },
+  { code:'ur', name:'Urdu' },
+  { code:'fr', name:'French' },
+  { code:'de', name:'German' },
+  { code:'es', name:'Spanish' },
+  { code:'it', name:'Italian' },
+  { code:'pt', name:'Portuguese' },
+  { code:'ru', name:'Russian' },
+  { code:'zh', name:'Chinese (Simplified)' },
+  { code:'zh-TW', name:'Chinese (Traditional)' },
+  { code:'ja', name:'Japanese' },
+  { code:'ko', name:'Korean' },
+  { code:'ar', name:'Arabic' },
+  { code:'tr', name:'Turkish' },
+  { code:'nl', name:'Dutch' },
+  { code:'pl', name:'Polish' },
+  { code:'sv', name:'Swedish' },
+  { code:'da', name:'Danish' },
+  { code:'fi', name:'Finnish' },
+  { code:'no', name:'Norwegian' },
+  { code:'el', name:'Greek' },
+  { code:'he', name:'Hebrew' },
+  { code:'th', name:'Thai' },
+  { code:'vi', name:'Vietnamese' },
+  { code:'id', name:'Indonesian' },
+  { code:'ms', name:'Malay' },
+  { code:'uk', name:'Ukrainian' },
+  { code:'ro', name:'Romanian' },
+  { code:'hu', name:'Hungarian' },
+  { code:'cs', name:'Czech' },
+  { code:'sk', name:'Slovak' },
+  { code:'bg', name:'Bulgarian' },
+  { code:'hr', name:'Croatian' },
+  { code:'sr', name:'Serbian' },
+  { code:'lt', name:'Lithuanian' },
+  { code:'lv', name:'Latvian' },
+  { code:'et', name:'Estonian' },
+  { code:'fa', name:'Persian' },
+  { code:'sw', name:'Swahili' },
+  { code:'af', name:'Afrikaans' },
+];
+
+// Populate selects
+function populateSelects() {
+  const src = document.getElementById('source-lang');
+  const tgt = document.getElementById('target-lang');
+  LANGUAGES.forEach(l => {
+    const o1 = new Option(l.name, l.code);
+    const o2 = new Option(l.name, l.code);
+    src.appendChild(o1);
+    if(l.code !== 'auto') tgt.appendChild(o2);
+  });
+  src.value = 'auto';
+  tgt.value = 'ta'; // default target: Tamil
+}
+
+// ---- CHAR COUNT ----
+function updateCharCount() {
+  const len = document.getElementById('input-text').value.length;
+  document.getElementById('char-count').textContent = len + ' / 500';
+}
+
+// ---- SWAP ----
+function swapLanguages() {
+  const src = document.getElementById('source-lang');
+  const tgt = document.getElementById('target-lang');
+  const srcVal = src.value;
+  const tgtVal = tgt.value;
+  if(srcVal === 'auto') { showToast('Cannot swap Auto Detect'); return; }
+  // also swap text
+  const inputEl = document.getElementById('input-text');
+  const outputEl = document.getElementById('output-text');
+  const outText = outputEl.innerText;
+  if(outText && !outputEl.querySelector('.output-placeholder')) {
+    inputEl.value = outText;
+    updateCharCount();
+  }
+  src.value = tgtVal;
+  tgt.value = srcVal === 'auto' ? 'en' : srcVal;
+  outputEl.innerHTML = '<span class="output-placeholder">Translation will appear here…</span>';
+  document.getElementById('copy-btn').disabled = true;
+}
+
+// ---- TRANSLATE ----
+let history = JSON.parse(localStorage.getItem('linguashift_history') || '[]');
+renderHistory();
+
+async function translateText() {
+  const text = document.getElementById('input-text').value.trim();
+  if(!text) { showToast('Please enter some text!'); return; }
+
+  const srcLang = document.getElementById('source-lang').value;
+  const tgtLang = document.getElementById('target-lang').value;
+
+  // UI loading state
+  const btn = document.getElementById('translate-btn');
+  btn.disabled = true;
+  document.getElementById('spinner').classList.add('show');
+  document.getElementById('translate-label').textContent = 'Translating…';
+  document.getElementById('output-text').innerHTML = '<span class="output-placeholder">Fetching translation…</span>';
+  document.getElementById('copy-btn').disabled = true;
+
+  try {
+    const langPair = `${srcLang === 'auto' ? 'en' : srcLang}|${tgtLang}`;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if(data.responseStatus === 200) {
+      const translated = data.responseData.translatedText;
+      document.getElementById('output-text').textContent = translated;
+      document.getElementById('copy-btn').disabled = false;
+
+      // detected lang badge
+      if(srcLang === 'auto') {
+        document.getElementById('detected-badge').classList.add('show');
+      } else {
+        document.getElementById('detected-badge').classList.remove('show');
+      }
+
+      // save history
+      const srcName = LANGUAGES.find(l=>l.code===srcLang)?.name || srcLang;
+      const tgtName = LANGUAGES.find(l=>l.code===tgtLang)?.name || tgtLang;
+      history.unshift({ original: text, translated, srcName, tgtName, time: Date.now() });
+      if(history.length > 10) history = history.slice(0,10);
+      localStorage.setItem('linguashift_history', JSON.stringify(history));
+      renderHistory();
+
+    } else {
+      document.getElementById('output-text').innerHTML = '<span class="output-placeholder">Translation failed. Try again!</span>';
+      showToast('API error: ' + (data.responseDetails || 'Unknown error'));
+    }
+  } catch(err) {
+    document.getElementById('output-text').innerHTML = '<span class="output-placeholder">Network error. Check your connection.</span>';
+    showToast('Network error!');
+  }
+
+  btn.disabled = false;
+  document.getElementById('spinner').classList.remove('show');
+  document.getElementById('translate-label').textContent = 'Translate →';
+}
+
+// Enter key shortcut
+document.addEventListener('keydown', e => {
+  if(e.ctrlKey && e.key === 'Enter') translateText();
+});
+
+// ---- COPY ----
+function copyTranslation() {
+  const text = document.getElementById('output-text').textContent;
+  if(!text || document.getElementById('output-text').querySelector('.output-placeholder')) return;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('✓ Copied to clipboard!');
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(()=>{ btn.innerHTML = '⧉ Copy'; }, 2000);
+  });
+}
+
+// ---- CLEAR ----
+function clearAll() {
+  document.getElementById('input-text').value = '';
+  document.getElementById('output-text').innerHTML = '<span class="output-placeholder">Translation will appear here…</span>';
+  document.getElementById('copy-btn').disabled = true;
+  document.getElementById('detected-badge').classList.remove('show');
+  updateCharCount();
+}
+
+// ---- HISTORY ----
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if(!history.length) {
+    el.innerHTML = '<div class="empty-history">No translations yet. Start translating above!</div>';
+    return;
+  }
+  el.innerHTML = history.map(h => `
+    <div class="history-item">
+      <div>
+        <div class="history-text history-original">${escapeHtml(h.original.slice(0,80))}${h.original.length>80?'…':''}</div>
+        <div class="history-langs">${h.srcName}</div>
+      </div>
+      <div class="history-arrow">→</div>
+      <div>
+        <div class="history-text">${escapeHtml(h.translated.slice(0,80))}${h.translated.length>80?'…':''}</div>
+        <div class="history-langs">${h.tgtName}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function clearHistory() {
+  history = [];
+  localStorage.removeItem('linguashift_history');
+  renderHistory();
+  showToast('History cleared');
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ---- TOAST ----
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ---- INIT ----
+populateSelects();
+</script>
+</body>
+</html>
